@@ -5,7 +5,7 @@ let reachedBigMilestones = new Set();
 
 // New Small Milestone Tracking
 const SMALL_MILESTONE_TRIGGERS = {
-    16: { first: false, count: 0, triggerEvery: 6 }, // New trigger for 16
+    16: { first: false, count: 0, triggerEvery: 5 }, // New trigger for 16
     64: { first: false, count: 0, triggerEvery: 4 },
     256: { first: false, count: 0, triggerEvery: 3 },
 };
@@ -29,6 +29,7 @@ function reportTileValue(value) {
             reachedBigMilestones.add(milestone);
             console.log(`Big Milestone Reached: ${milestone}`);
             triggerRewardSelection('big');
+            updateNextMilestoneDisplay(); // Update display after triggering a big milestone
             return; // Only trigger one milestone at a time
         }
     }
@@ -45,6 +46,7 @@ function reportTileValue(value) {
                 reachedSmallMilestones.add(`${value}-first`);
                 console.log(`Small Milestone Reached: ${value} (First appearance)`);
                 triggerRewardSelection('small');
+                updateNextMilestoneDisplay(); // Update display after triggering a small milestone
                 return;
             }
         }
@@ -55,6 +57,7 @@ function reportTileValue(value) {
                 reachedSmallMilestones.add(`${value}-${trigger.count}th`);
                 console.log(`Small Milestone Reached: ${value} (${trigger.count}th appearance)`);
                 triggerRewardSelection('small');
+                updateNextMilestoneDisplay(); // Update display after triggering a small milestone
                 return;
             }
         }
@@ -62,6 +65,7 @@ function reportTileValue(value) {
 
     // Check for Late Game (based on max tile value, not individual tile creation)
     // This logic remains in checkForMilestones as it's a global board state check
+    updateNextMilestoneDisplay(); // Update display after any tile value change (even if not a milestone)
 }
 
 // Function to check for milestones (now primarily for Late Game)
@@ -84,6 +88,7 @@ function checkForMilestones() {
             reachedBigMilestones.add(LATE_GAME_THRESHOLD_VALUE);
             console.log(`Late Game Threshold Reached: ${maxTileValue}`);
             triggerRewardSelection('lateGame');
+            updateNextMilestoneDisplay(); // Update display after triggering late game
             return;
         }
     }
@@ -266,6 +271,54 @@ function updateActivePassivesDisplay() {
     });
 }
 
+function updateNextMilestoneDisplay() {
+    const nextMilestonesDiv = document.getElementById('next-milestones');
+    nextMilestonesDiv.innerHTML = '<h3>다음 마일스톤:</h3>'; // Reset content
+
+    let hasUpcomingMilestone = false;
+
+    // Display Small Milestones
+    for (const value of Object.keys(SMALL_MILESTONE_TRIGGERS)) {
+        const trigger = SMALL_MILESTONE_TRIGGERS[value];
+        let remaining = 0;
+
+        if (!trigger.first) {
+            remaining = 1; // Needs to appear once for the first trigger
+        } else {
+            // Calculate remaining for subsequent triggers
+            const nextTriggerCount = Math.floor((trigger.count / trigger.triggerEvery)) * trigger.triggerEvery + trigger.triggerEvery;
+            remaining = nextTriggerCount - trigger.count;
+        }
+
+        // Only display if it's an upcoming milestone
+        if (remaining > 0) {
+            hasUpcomingMilestone = true;
+            const p = document.createElement('p');
+            p.textContent = `${value} : -${remaining}`;
+            nextMilestonesDiv.appendChild(p);
+        }
+    }
+
+    // Display Big Milestones (only the next one)
+    let nextBigMilestone = null;
+    for (const milestone of BIG_MILESTONES) {
+        if (!reachedBigMilestones.has(milestone)) {
+            nextBigMilestone = milestone;
+            break;
+        }
+    }
+    if (nextBigMilestone) {
+        hasUpcomingMilestone = true;
+        const p = document.createElement('p');
+        p.textContent = `큰 마일스톤: ${nextBigMilestone}`;
+        nextMilestonesDiv.appendChild(p);
+    }
+
+    if (!hasUpcomingMilestone) {
+        nextMilestonesDiv.innerHTML += '<p>모든 마일스톤 달성!</p>';
+    }
+}
+
 // Function to apply a chosen reward
 function applyReward(rewardType, rewardName) {
     console.log(`Applying reward: ${rewardType} - ${rewardName}`);
@@ -292,4 +345,5 @@ function applyReward(rewardType, rewardName) {
     document.getElementById('reward-modal').style.display = 'none';
     drawBoard(); // Redraw board after applying effect
     updateActivePassivesDisplay(); // Update display after applying a passive
+    updateNextMilestoneDisplay(); // Update display after applying a reward
 }

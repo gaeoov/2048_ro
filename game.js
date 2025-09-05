@@ -12,6 +12,8 @@ function initializeGame() {
     reportTileValue(addRandomTile());
     reportTileValue(addRandomTile());
     drawBoard();
+    updateActivePassivesDisplay(); // Initialize active passives display
+    updateNextMilestoneDisplay(); // Initialize next milestone display
 }
 
 function drawBoard() {
@@ -265,6 +267,7 @@ function showGameOverScreen() {
         window.tileDecayActive = false;
         window.movesSinceLastDecay = 0;
         window.scoreOnMoveActive = false;
+        updateNextMilestoneDisplay(); // Reset milestone display on retry
     });
 
     rewardModal.style.display = 'block';
