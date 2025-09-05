@@ -5,7 +5,7 @@ let reachedBigMilestones = new Set();
 
 // New Small Milestone Tracking
 const SMALL_MILESTONE_TRIGGERS = {
-    32: { first: false, count: 0, triggerEvery: 5 },
+    16: { first: false, count: 0, triggerEvery: 6 }, // New trigger for 16
     64: { first: false, count: 0, triggerEvery: 4 },
     256: { first: false, count: 0, triggerEvery: 3 },
 };
