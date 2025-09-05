@@ -268,4 +268,54 @@ function showGameOverScreen() {
     rewardModal.style.display = 'block';
 }
 
+let touchStartX = 0;
+let touchStartY = 0;
+let touchEndX = 0;
+let touchEndY = 0;
+
+gameBoard.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+}, false);
+
+gameBoard.addEventListener('touchmove', (e) => {
+    e.preventDefault(); // Prevent scrolling
+}, false);
+
+gameBoard.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    touchEndY = e.changedTouches[0].screenY;
+    handleGesture();
+}, false);
+
+function handleGesture() {
+    const dx = touchEndX - touchStartX;
+    const dy = touchEndY - touchStartY;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    let moved = false;
+
+    if (absDx > absDy) { // Horizontal swipe
+        if (dx > 0) {
+            moved = move('right');
+        } else {
+            moved = move('left');
+        }
+    } else { // Vertical swipe
+        if (dy > 0) {
+            moved = move('down');
+        } else {
+            moved = move('up');
+        }
+    }
+
+    if (moved) {
+        checkForMilestones();
+        if (isGameOver()) {
+            showGameOverScreen();
+        }
+    }
+}
+
 initializeGame();

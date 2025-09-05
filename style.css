@@ -95,3 +95,33 @@
 .reward-option:hover {
     background-color: #f0f0f0;
 }
+
+@media (max-width: 600px) {
+    #game-board {
+        grid-template-columns: repeat(5, 60px); /* Smaller tiles */
+        grid-template-rows: repeat(5, 60px);
+        gap: 3px;
+        padding: 5px;
+    }
+
+    .tile {
+        width: 60px;
+        height: 60px;
+        font-size: 18px; /* Smaller font size */
+    }
+
+    .modal-content {
+        width: 95%; /* Wider modal on small screens */
+        margin: 5% auto; /* Adjust margin */
+    }
+
+    #reward-options {
+        flex-direction: column; /* Stack reward options vertically */
+        align-items: center;
+    }
+
+    .reward-option {
+        width: 90%; /* Wider reward options */
+        margin-bottom: 10px; /* Add some space between stacked options */
+    }
+}
