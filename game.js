@@ -273,22 +273,24 @@ let touchStartY = 0;
 let touchEndX = 0;
 let touchEndY = 0;
 
-gameBoard.addEventListener('touchstart', (e) => {
+window.addEventListener('touchstart', (e) => {
     touchStartX = e.changedTouches[0].screenX;
     touchStartY = e.changedTouches[0].screenY;
-}, false);
+}, { passive: true }); // Changed to passive: true
 
-gameBoard.addEventListener('touchmove', (e) => {
-    e.preventDefault(); // Prevent scrolling
-}, false);
+window.addEventListener('touchmove', (e) => {
+    // e.preventDefault(); // Removed preventDefault here
+}, { passive: true }); // Changed to passive: true
 
-gameBoard.addEventListener('touchend', (e) => {
+window.addEventListener('touchend', (e) => {
     touchEndX = e.changedTouches[0].screenX;
     touchEndY = e.changedTouches[0].screenY;
-    handleGesture();
+    handleGesture(e); // Pass event object
 }, false);
 
-function handleGesture() {
+function handleGesture(e) {
+    const SWIPE_THRESHOLD = 30; // Minimum pixels for a swipe
+
     const dx = touchEndX - touchStartX;
     const dy = touchEndY - touchStartY;
     const absDx = Math.abs(dx);
@@ -297,16 +299,22 @@ function handleGesture() {
     let moved = false;
 
     if (absDx > absDy) { // Horizontal swipe
-        if (dx > 0) {
-            moved = move('right');
-        } else {
-            moved = move('left');
+        if (absDx > SWIPE_THRESHOLD) {
+            e.preventDefault(); // Prevent default only if a swipe is detected
+            if (dx > 0) {
+                moved = move('right');
+            } else {
+                moved = move('left');
+            }
         }
     } else { // Vertical swipe
-        if (dy > 0) {
-            moved = move('down');
-        } else {
-            moved = move('up');
+        if (absDy > SWIPE_THRESHOLD) {
+            e.preventDefault(); // Prevent default only if a swipe is detected
+            if (dy > 0) {
+                moved = move('down');
+            } else {
+                moved = move('up');
+            }
         }
     }
 
