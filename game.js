@@ -9,8 +9,8 @@ function initializeGame() {
     board = Array(boardSize).fill(0).map(() => Array(boardSize).fill(0));
     score = 0;
     updateScore();
-    addRandomTile();
-    addRandomTile();
+    reportTileValue(addRandomTile());
+    reportTileValue(addRandomTile());
     drawBoard();
 }
 
@@ -63,6 +63,7 @@ function addRandomTile() {
                 spawnValue = 4;
             }
             board[r][c] = spawnValue;
+            reportTileValue(spawnValue); // Report the newly spawned tile
         }
     }
 }
@@ -88,6 +89,7 @@ function combine(row) {
             if (window.adjacentMergeBonusActive) {
                 console.log("인접 병합 보너스 활성: 완전한 구현은 복잡합니다.");
             }
+            reportTileValue(row[i]); // Report the newly merged tile
         }
     }
     return row;

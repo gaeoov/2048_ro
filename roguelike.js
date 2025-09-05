@@ -1,15 +1,18 @@
 // roguelike.js
 
-const BIG_MILESTONES = [2048, 4096, 8192, 16384, 32768];
-const SMALL_MILESTONE_DIVISORS = [32, 8]; // For early/mid game
-const LATE_GAME_THRESHOLD = 1024; // Example: when max tile reaches this, use different divisors
-const LATE_GAME_SMALL_MILESTONE_DIVISORS = [16, 4];
-const LATE_GAME_THRESHOLD_VALUE = 65536;
-
+const BIG_MILESTONES = [1024, 2048, 4096, 8192]; // Updated Big Milestones
 let reachedBigMilestones = new Set();
-let reachedSmallMilestones = new Set();
+
+// New Small Milestone Tracking
+const SMALL_MILESTONE_TRIGGERS = {
+    32: { first: false, count: 0, triggerEvery: 5 },
+    64: { first: false, count: 0, triggerEvery: 4 },
+    256: { first: false, count: 0, triggerEvery: 3 },
+};
+let reachedSmallMilestones = new Set(); // To track specific triggers (e.g., '32-first', '64-2nd')
+
 let activePassiveEffects = []; // Stores names of active passive effects
-const MAX_PASSIVE_SLOTS = 5;
+const MAX_PASSIVE_SLOTS = 4; // Updated Max Passive Slots
 
 const POWERFUL_ONE_TIME_EFFECTS = [
     'scoreBoost',
@@ -18,7 +21,50 @@ const POWERFUL_ONE_TIME_EFFECTS = [
     'duplicateRandomTile'
 ];
 
-// Function to check for milestones after each move
+// New function to report tile values for milestone tracking
+function reportTileValue(value) {
+    // Check for Big Milestones
+    for (const milestone of BIG_MILESTONES) {
+        if (value === milestone && !reachedBigMilestones.has(milestone)) {
+            reachedBigMilestones.add(milestone);
+            console.log(`Big Milestone Reached: ${milestone}`);
+            triggerRewardSelection('big');
+            return; // Only trigger one milestone at a time
+        }
+    }
+
+    // Check for Small Milestones
+    if (SMALL_MILESTONE_TRIGGERS[value]) {
+        const trigger = SMALL_MILESTONE_TRIGGERS[value];
+        trigger.count++;
+
+        // First appearance
+        if (!trigger.first) {
+            trigger.first = true;
+            if (!reachedSmallMilestones.has(`${value}-first`)) {
+                reachedSmallMilestones.add(`${value}-first`);
+                console.log(`Small Milestone Reached: ${value} (First appearance)`);
+                triggerRewardSelection('small');
+                return;
+            }
+        }
+
+        // Subsequent appearances
+        if (trigger.count > 1 && (trigger.count - 1) % trigger.triggerEvery === 0) {
+            if (!reachedSmallMilestones.has(`${value}-${trigger.count}th`)) {
+                reachedSmallMilestones.add(`${value}-${trigger.count}th`);
+                console.log(`Small Milestone Reached: ${value} (${trigger.count}th appearance)`);
+                triggerRewardSelection('small');
+                return;
+            }
+        }
+    }
+
+    // Check for Late Game (based on max tile value, not individual tile creation)
+    // This logic remains in checkForMilestones as it's a global board state check
+}
+
+// Function to check for milestones (now primarily for Late Game)
 function checkForMilestones() {
     let maxTileValue = 0;
     for (let r = 0; r < boardSize; r++) {
@@ -29,60 +75,16 @@ function checkForMilestones() {
         }
     }
 
-    // Check for Late Game first
+    // Check for Late Game
     if (maxTileValue >= LATE_GAME_THRESHOLD_VALUE) {
-        // Check if any milestone (big or small) is reached to trigger late game options
-        let milestoneReachedThisTurn = false;
-        for (const milestone of BIG_MILESTONES) {
-            if (maxTileValue >= milestone && !reachedBigMilestones.has(milestone)) {
-                reachedBigMilestones.add(milestone);
-                milestoneReachedThisTurn = true;
-                break;
-            }
-        }
-        if (!milestoneReachedThisTurn) {
-            const currentDivisors = maxTileValue >= LATE_GAME_THRESHOLD ? LATE_GAME_SMALL_MILESTONE_DIVISORS : SMALL_MILESTONE_DIVISORS;
-            for (const divisor of currentDivisors) {
-                const smallMilestoneValue = Math.floor(maxTileValue / divisor);
-                if (smallMilestoneValue >= 2 && (smallMilestoneValue & (smallMilestoneValue - 1)) === 0) {
-                    if (!reachedSmallMilestones.has(smallMilestoneValue)) {
-                        reachedSmallMilestones.add(smallMilestoneValue);
-                        milestoneReachedThisTurn = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (milestoneReachedThisTurn) {
-            console.log(`Late Game Milestone Reached: ${maxTileValue}`);
+        // We need a way to ensure late game options are triggered only once per milestone value
+        // For simplicity, let's assume reaching this value for the first time triggers it.
+        // A more robust solution would involve tracking if late game options have been presented for this maxTileValue.
+        if (!reachedBigMilestones.has(LATE_GAME_THRESHOLD_VALUE)) { // Use big milestone set to track this
+            reachedBigMilestones.add(LATE_GAME_THRESHOLD_VALUE);
+            console.log(`Late Game Threshold Reached: ${maxTileValue}`);
             triggerRewardSelection('lateGame');
             return;
-        }
-    }
-
-    // Check for Big Milestones
-    for (const milestone of BIG_MILESTONES) {
-        if (maxTileValue >= milestone && !reachedBigMilestones.has(milestone)) {
-            reachedBigMilestones.add(milestone);
-            console.log(`Big Milestone Reached: ${milestone}`);
-            triggerRewardSelection('big');
-            return; // Only trigger one milestone at a time
-        }
-    }
-
-    // Check for Small Milestones if no Big Milestone was reached
-    const currentDivisors = maxTileValue >= LATE_GAME_THRESHOLD ? LATE_GAME_SMALL_MILESTONE_DIVISORS : SMALL_MILESTONE_DIVISORS;
-    for (const divisor of currentDivisors) {
-        const smallMilestoneValue = Math.floor(maxTileValue / divisor);
-        // Ensure small milestone is a power of 2 and not 0
-        if (smallMilestoneValue >= 2 && (smallMilestoneValue & (smallMilestoneValue - 1)) === 0) {
-            if (!reachedSmallMilestones.has(smallMilestoneValue)) { // Track the value itself
-                reachedSmallMilestones.add(smallMilestoneValue);
-                console.log(`Small Milestone Reached: maxTileValue/${divisor} = ${smallMilestoneValue}`);
-                triggerRewardSelection('small');
-                return; // Only trigger one milestone at a time
-            }
         }
     }
 }
